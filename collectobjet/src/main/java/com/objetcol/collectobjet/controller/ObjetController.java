@@ -50,12 +50,6 @@ public class ObjetController {
         return ResponseEntity.ok(ApiResponse.success("Liste des objets", page));
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Obtenir un objet par son ID")
-    public ResponseEntity<ApiResponse<ObjetResponse>> getObjet(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("Objet trouvé", objetService.getObjetById(id)));
-    }
-
     @GetMapping("/recherche")
     @Operation(summary = "Rechercher des objets avec mots-clés")
     public ResponseEntity<ApiResponse<Page<ObjetResponse>>> rechercher(
@@ -66,6 +60,20 @@ public class ObjetController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<ObjetResponse> result = objetService.rechercher(keyword, type, statut, categorieId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Résultats de la recherche", result));
+    }
+
+    @GetMapping("/mes-objets")
+    @Operation(summary = "Lister mes propres objets", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponse<List<ObjetResponse>>> getMesObjets(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        List<ObjetResponse> objets = objetService.getMesObjets(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Mes objets", objets));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtenir un objet par son ID")
+    public ResponseEntity<ApiResponse<ObjetResponse>> getObjet(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Objet trouvé", objetService.getObjetById(id)));
     }
 
     @PutMapping("/{id}")
@@ -95,13 +103,5 @@ public class ObjetController {
             @AuthenticationPrincipal UserDetails userDetails) {
         objetService.supprimerObjet(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Objet supprimé avec succès"));
-    }
-
-    @GetMapping("/mes-objets")
-    @Operation(summary = "Lister mes propres objets", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponse<List<ObjetResponse>>> getMesObjets(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        List<ObjetResponse> objets = objetService.getMesObjets(userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success("Mes objets", objets));
     }
 }

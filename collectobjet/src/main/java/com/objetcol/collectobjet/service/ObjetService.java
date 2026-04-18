@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,8 +80,11 @@ public class ObjetService {
 
     public Page<ObjetResponse> rechercher(String keyword, TypeObjet type, StatutObjet statut,
                                           Long categorieId, Pageable pageable) {
-        return objetRepository.rechercher(keyword, type, statut, categorieId, pageable)
-                .map(this::toResponse);
+        boolean sansMotCle = keyword == null || keyword.isBlank();
+        Page<Objet> page = sansMotCle
+                ? objetRepository.rechercherSansMotCle(type, statut, categorieId, pageable)
+                : objetRepository.rechercherAvecMotCle(keyword.trim(), type, statut, categorieId, pageable);
+        return page.map(this::toResponse);
     }
 
     @Transactional
@@ -102,6 +106,17 @@ public class ObjetService {
             Categorie categorie = categorieRepository.findById(request.getCategorieId())
                     .orElseThrow(() -> new ResourceNotFoundException("Categorie", request.getCategorieId()));
             objet.setCategorie(categorie);
+        }
+
+        if (request.getPhotosUrls() != null) {
+            if (objet.getPhotos() == null) {
+                objet.setPhotos(new ArrayList<>());
+            } else {
+                objet.getPhotos().clear();
+            }
+            for (String url : request.getPhotosUrls()) {
+                objet.getPhotos().add(Photo.builder().url(url).objet(objet).build());
+            }
         }
 
         return toResponse(objetRepository.save(objet));
@@ -160,6 +175,7 @@ public class ObjetService {
                 .dateEvenement(objet.getDateEvenement())
                 .categorieId(objet.getCategorie() != null ? objet.getCategorie().getId() : null)
                 .categorieNom(objet.getCategorie() != null ? objet.getCategorie().getNom() : null)
+                .categorieDescription(objet.getCategorie() != null ? objet.getCategorie().getDescription() : null)
                 .proprietaireId(objet.getProprietaire().getId())
                 .proprietaireUsername(objet.getProprietaire().getUsername())
                 .photosUrls(photosUrls)
