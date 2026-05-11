@@ -17,7 +17,9 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins:http://localhost:3000}") String allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+        // Patterns (pas seulement origines fixes) : permet « https://*.vercel.app » pour les déploiements preview
+        // tout en gardant des URL exactes (ex. https://trouv-togo.vercel.app). Compatible Spring 6 + credentials.
+        config.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList());
